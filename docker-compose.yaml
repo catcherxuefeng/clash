@@ -1,0 +1,25 @@
+# 使用docker实现透明代理，无需配置iptables
+version: "2.3" #这里选择2.3否则macvlan可能报错
+services:
+  clash:
+    cap_add:
+      - NET_ADMIN
+    container_name: clash
+    image: clarkecheng/clash-transparent-proxy-docker
+    networks: 
+      clash_macvlan:
+        ipv4_address: 192.168.2.2  #clash服务ip,之后把需要透明代理的设备网关设置为这个就可以
+    restart: always
+    volumes:
+      - ./config.yaml:/root/.config/clash/config.yaml 
+
+networks:
+  clash_macvlan:
+    driver: macvlan
+    driver_opts:
+      parent: eth0 #跑docker的主机网卡，不成功可能需要手动开启下混杂模式，ip link set eth0 promisc on
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.2.0/24  #你的网段
+          gateway: 192.168.2.1    #你的网关
